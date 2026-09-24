@@ -259,6 +259,7 @@
 
         const gameoverEl = document.getElementById("gameover-screen");
         const goTitle = document.getElementById("go-title");
+        const goSub = document.getElementById("go-sub");
         document.getElementById("btn-again").onclick = startGame;
 
         const DOM = {
@@ -511,7 +512,17 @@
                 announcer.classList.remove("show");
                 if (scoreP >= 5 || scoreCpu >= 5) {
                     isGameOver = true;
-                    goTitle.innerText = scoreP >= 5 ? "VITÓRIA!" : "DERROTA";
+                    if (scoreP >= 5) {
+                        goTitle.innerText = "VITÓRIA!";
+                        goTitle.style.color = "#00f0ff";
+                        goTitle.style.textShadow = "0 0 15px #00f0ff";
+                        goSub.innerText = "VOCÊ VENCEU A PARTIDA";
+                    } else {
+                        goTitle.innerText = "QUE AZAR!";
+                        goTitle.style.color = "#ff0055";
+                        goTitle.style.textShadow = "0 0 15px #ff0055";
+                        goSub.innerText = "QUEM SABE NA PRÓXIMA?";
+                    }
                     gameoverEl.classList.remove("hidden");
                 } else {
                     resetPositions(winner);
