@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Hockey Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #050811;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .master {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 800px;
+            height: 500px;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.2);
+            cursor: none;
+        }
+
+        #game-arena {
+            position: relative;
+            width: 800px;
+            height: 500px;
+        }
+
+        .stat-panel {
+            width: 170px;
+            background: rgba(10, 16, 30, 0.85);
+            border-radius: 12px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-left {
+            border-left: 4px solid #00f0ff;
+            box-shadow: -5px 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        .stat-right {
+            border-right: 4px solid #ff0055;
+            box-shadow: 5px 0 15px rgba(255, 0, 85, 0.2);
+        }
+
+        .stat-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .stat-score {
+            font-size: 54px;
+            font-weight: 900;
+            margin: 10px 0;
+        }
+
+        .stat-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+        }
+
+        .stat-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+
+        .stat-label {
+            color: #8a99ad;
+            font-weight: 600;
+        }
+
+        .stat-val {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .stat-footer {
+            font-size: 10px;
+            color: #5d6b7c;
+            letter-spacing: 1px;
+        }
+
+        /* Animação da Mensagem de Ponto */
+        .announcer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.3);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .announcer.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .announcer h1 {
+            font-size: 56px;
+            font-weight: 900;
+            color: #00f0ff;
+            text-shadow: 0 0 20px #00f0ff, 0 0 40px #0088ff;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .announcer p {
+            font-size: 22px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #ffffff;
+            margin-top: 5px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 17, 0.85);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(8px);
+            z-index: 20;
+            transition: opacity 0.4s ease;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .go-inner {
+            text-align: center;
+        }
+
+        .go-inner h1 {
+            font-size: 42px;
+            color: #00f0ff;
+            text-shadow: 0 0 15px #00f0ff;
+            margin-bottom: 5px;
+        }
+
+        .go-inner p {
+            color: #8a99ad;
+            margin-bottom: 25px;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .go-inner button {
+            background: transparent;
+            border: 2px solid #00f0ff;
+            color: #00f0ff;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .go-inner button:hover {
+            background: #00f0ff;
+            color: #050811;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="master">
+        <div class="stat-panel stat-left">
+            <div class="stat-name" style="color: #00f0ff;">YOU</div>
+            <div class="stat-score" id="score-p" style="color: #ffffff; text-shadow: 0 0 20px #00f0ff;">0</div>
+            <div class="stat-divider"></div>
+            <div class="stat-row"><span class="stat-label">STREAK</span><span class="stat-val" id="stat-p-streak">0</span></div>
+            <div class="stat-row"><span class="stat-label">TOP SPEED</span><span class="stat-val" id="stat-p-speed">0</span></div>
+            <div class="stat-row"><span class="stat-label">POWER HITS</span><span class="stat-val" id="stat-p-power">0</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat-footer">FIRST TO 5 WINS</div>
+        </div>
+
+        <div id="game-arena">
+            <canvas id="c"></canvas>
+
+            <!-- Mensagem ao fazer Ponto -->
+            <div id="announcer" class="announcer">
+                <h1 id="ann-main">PONTO!</h1>
+                <p id="ann-sub">BOM CHUTE!</p>
+            </div>
+
+            <div id="gameover-screen" class="screen hidden">
+                <div class="go-inner">
+                    <h1 id="go-title">VITÓRIA!</h1>
+                    <p id="go-sub" class="go-sub">VOCÊ VENCEU A PARTIDA</p>
+                    <button id="btn-again">JOGAR NOVAMENTE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-panel stat-right">
+            <div class="stat-name" style="color: #ff0055;">CPU</div>
+            <div class="stat-score" id="score-cpu" style="color: #ffffff; text-shadow: 0 0 20px #ff0055;">0</div>
+            <div class="stat-divider"></div>
+            <div class="stat-row"><span class="stat-label">STREAK</span><span class="stat-val" id="stat-cpu-streak">0</span></div>
+            <div class="stat-row"><span class="stat-label">TOP SPEED</span><span class="stat-val" id="stat-cpu-speed">0</span></div>
+            <div class="stat-row"><span class="stat-label">POWER HITS</span><span class="stat-val" id="stat-cpu-power">0</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat-footer">FIRST TO 5 WINS</div>
+        </div>
+    </div>
+
+    <script>
+        const cv = document.getElementById("c");
+        const ctx = cv.getContext("2d");
+        cv.width = 800;
+        cv.height = 500;
+        const w = cv.width;
+        const h = cv.height;
+
+        const MARGIN = 10;
+
+        const gameoverEl = document.getElementById("gameover-screen");
+        const goTitle = document.getElementById("go-title");
+        document.getElementById("btn-again").onclick = startGame;
+
+        const DOM = {
+            scoreP: document.getElementById("score-p"),
+            scoreCpu: document.getElementById("score-cpu"),
+            pStreak: document.getElementById("stat-p-streak"),
+            pSpeed: document.getElementById("stat-p-speed"),
+            pPower: document.getElementById("stat-p-power"),
+            cpuStreak: document.getElementById("stat-cpu-streak"),
+            cpuSpeed: document.getElementById("stat-cpu-speed"),
+            cpuPower: document.getElementById("stat-cpu-power")
+        };
+
+        // Mensagens ao marcar ponto
+        const playerGoalSubMsgs = ["BOM CHUTE!", "GOLAÇO!", "EXCELENTE!", "BOLA NA REDE!"];
+        const cpuGoalSubMsgs = ["PONTO DO CPU!", "AZAR!", "TENTA DE NOVO!", "DEFENDE MAIS!"];
+
+        let audioCtx = null;
+        let lastSoundTime = 0;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+        }
+
+        function playSound(freq, type, duration) {
+            const now = Date.now();
+            if (!audioCtx || now - lastSoundTime < 80) return;
+            lastSoundTime = now;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        const goalHeight = 160;
+        const goalTop = (h - goalHeight) / 2;
+        const goalBottom = goalTop + goalHeight;
+
+        let puck = { x: w/2, y: h/2, vx: 0, vy: 0, radius: 15 };
+        let player = { x: 100, y: h/2, vx: 0, vy: 0, radius: 30 };
+        let cpu = { x: w - 100, y: h/2, vx: 0, vy: 0, radius: 30 };
+        let mouse = { x: 100, y: h/2 };
+
+        let scoreP = 0, scoreCpu = 0;
+        let isGameOver = false, isResetting = false;
+
+        let stats = { pStreak: 0, pSpeed: 0, pPower: 0, cpuStreak: 0, cpuSpeed: 0, cpuPower: 0 };
+
+        cv.addEventListener("mousemove", (e) => {
+            const rect = cv.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+
+        window.addEventListener("click", initAudio, { once: true });
+
+        function startGame() {
+            scoreP = 0; scoreCpu = 0;
+            isGameOver = false;
+            isResetting = false;
+            stats = { pStreak: 0, pSpeed: 0, pPower: 0, cpuStreak: 0, cpuSpeed: 0, cpuPower: 0 };
+            gameoverEl.classList.add("hidden");
+            resetPositions();
+            updateUI();
+        }
+
+        function resetPositions(scorer) {
+            puck.x = w / 2; puck.y = h / 2;
+            puck.vx = (scorer === 'player') ? 4 : (scorer === 'cpu' ? -4 : (Math.random() > 0.5 ? 4 : -4));
+            puck.vy = (Math.random() - 0.5) * 4;
+            player.x = 100; player.y = h / 2;
+            cpu.x = w - 100; cpu.y = h / 2;
+        }
+
+        function updateUI() {
+            DOM.scoreP.innerText = scoreP;
+            DOM.scoreCpu.innerText = scoreCpu;
+            DOM.pStreak.innerText = stats.pStreak;
+            DOM.pSpeed.innerText = stats.pSpeed;
+            DOM.pPower.innerText = stats.pPower;
+            DOM.cpuStreak.innerText = stats.cpuStreak;
+            DOM.cpuSpeed.innerText = stats.cpuSpeed;
+            DOM.cpuPower.innerText = stats.cpuPower;
+        }
+
+        function update() {
+            if (isGameOver || isResetting) return;
+
+            // Movimento Jogador
+            const targetPx = Math.min(Math.max(mouse.x, MARGIN + player.radius), (w / 2) - player.radius);
+            const targetPy = Math.min(Math.max(mouse.y, MARGIN + player.radius), h - MARGIN - player.radius);
+            player.vx = targetPx - player.x;
+            player.vy = targetPy - player.y;
+            player.x = targetPx;
+            player.y = targetPy;
+
+            // Movimento CPU
+            let targetCpuX = w - 100;
+            let targetCpuY = puck.y;
+
+            if (puck.x > w / 2) {
+                targetCpuX = puck.x;
+                if (puck.x > w - MARGIN - 40 && (puck.y < MARGIN + 40 || puck.y > h - MARGIN - 40)) {
+                    targetCpuX = w - 120;
+                }
+            }
+
+            targetCpuX = Math.min(Math.max(targetCpuX, (w / 2) + cpu.radius), w - MARGIN - cpu.radius);
+            targetCpuY = Math.min(Math.max(targetCpuY, MARGIN + cpu.radius), h - MARGIN - cpu.radius);
+
+            const cpuSpeedLimit = 5.5;
+            const dxCpu = targetCpuX - cpu.x;
+            const dyCpu = targetCpuY - cpu.y;
+            
+            cpu.vx = Math.min(Math.max(dxCpu * 0.1, -cpuSpeedLimit), cpuSpeedLimit);
+            cpu.vy = Math.min(Math.max(dyCpu * 0.1, -cpuSpeedLimit), cpuSpeedLimit);
+            
+            cpu.x += cpu.vx;
+            cpu.y += cpu.vy;
+
+            cpu.x = Math.min(Math.max(cpu.x, (w / 2) + cpu.radius), w - MARGIN - cpu.radius);
+            cpu.y = Math.min(Math.max(cpu.y, MARGIN + cpu.radius), h - MARGIN - cpu.radius);
+
+            // Posição Disco
+            puck.x += puck.vx;
+            puck.y += puck.vy;
+            puck.vx *= 0.99;
+            puck.vy *= 0.99;
+
+            const MAX_SPEED = 14;
+            const currentSpeed = Math.hypot(puck.vx, puck.vy);
+            if (currentSpeed > MAX_SPEED) {
+                puck.vx = (puck.vx / currentSpeed) * MAX_SPEED;
+                puck.vy = (puck.vy / currentSpeed) * MAX_SPEED;
+            }
+
+            // Paredes
+            if (puck.y - puck.radius <= MARGIN) {
+                puck.y = MARGIN + puck.radius; 
+                puck.vy = Math.abs(puck.vy); 
+                playSound(300, 'sine', 0.08);
+            } else if (puck.y + puck.radius >= h - MARGIN) {
+                puck.y = h - MARGIN - puck.radius; 
+                puck.vy = -Math.abs(puck.vy); 
+                playSound(300, 'sine', 0.08);
+            }
+
+            if (puck.x - puck.radius <= MARGIN) {
+                if (puck.y < goalTop || puck.y > goalBottom) {
+                    puck.x = MARGIN + puck.radius; 
+                    puck.vx = Math.abs(puck.vx); 
+                    playSound(300, 'sine', 0.08);
+                } else if (puck.x < MARGIN - 5) {
+                    handleGoal('cpu');
+                }
+            } else if (puck.x + puck.radius >= w - MARGIN) {
+                if (puck.y < goalTop || puck.y > goalBottom) {
+                    puck.x = w - MARGIN - puck.radius; 
+                    puck.vx = -Math.abs(puck.vx); 
+                    playSound(300, 'sine', 0.08);
+                } else if (puck.x > w - MARGIN + 5) {
+                    handleGoal('player');
+                }
+            }
+
+            checkCollision(player, true);
+            checkCollision(cpu, false);
+        }
+
+        function checkCollision(paddle, isPlayer) {
+            const dx = puck.x - paddle.x;
+            const dy = puck.y - paddle.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = puck.radius + paddle.radius;
+
+            if (dist < minDist) {
+                let angle = Math.atan2(dy, dx);
+                if (dist === 0) angle = isPlayer ? 0 : Math.PI;
+
+                const speed = Math.max(Math.hypot(puck.vx, puck.vy), 6);
+                const hitPower = Math.hypot(paddle.vx, paddle.vy);
+                const totalSpeed = Math.min(speed + hitPower * 0.4, 14);
+
+                puck.vx = Math.cos(angle) * totalSpeed;
+                puck.vy = Math.sin(angle) * totalSpeed;
+                puck.x = paddle.x + Math.cos(angle) * (minDist + 2);
+                puck.y = paddle.y + Math.sin(angle) * (minDist + 2);
+
+                if (puck.x >= w - MARGIN - puck.radius && (puck.y <= MARGIN + puck.radius || puck.y >= h - MARGIN - puck.radius)) {
+                    puck.vx = -8;
+                    puck.vy = puck.y <= h / 2 ? 8 : -8;
+                } else if (puck.x <= MARGIN + puck.radius && (puck.y <= MARGIN + puck.radius || puck.y >= h - MARGIN - puck.radius)) {
+                    puck.vx = 8;
+                    puck.vy = puck.y <= h / 2 ? 8 : -8;
+                }
+
+                playSound(400, 'sine', 0.08);
+
+                const spdVal = Math.round(totalSpeed * 10);
+                if (isPlayer) {
+                    stats.pStreak++;
+                    if (spdVal > stats.pSpeed) stats.pSpeed = spdVal;
+                    if (hitPower > 8) stats.pPower++;
+                } else {
+                    stats.cpuStreak++;
+                    if (spdVal > stats.cpuSpeed) stats.cpuSpeed = spdVal;
+                    if (hitPower > 4) stats.cpuPower++;
+                }
+                updateUI();
+            }
+        }
+
+        // Função ao marcar Ponto
+        function handleGoal(winner) {
+            isResetting = true;
+            playSound(520, 'triangle', 0.3);
+
+            const announcer = document.getElementById("announcer");
+            const mainText = document.getElementById("ann-main");
+            const subText = document.getElementById("ann-sub");
+
+            if (winner === 'player') {
+                scoreP++;
+                mainText.innerText = "PONTO!";
+                mainText.style.color = "#00f0ff";
+                mainText.style.textShadow = "0 0 20px #00f0ff, 0 0 40px #0088ff";
+                subText.innerText = playerGoalSubMsgs[Math.floor(Math.random() * playerGoalSubMsgs.length)];
+            } else {
+                scoreCpu++;
+                mainText.innerText = "PONTO!";
+                mainText.style.color = "#ff0055";
+                mainText.style.textShadow = "0 0 20px #ff0055, 0 0 40px #ff0000";
+                subText.innerText = cpuGoalSubMsgs[Math.floor(Math.random() * cpuGoalSubMsgs.length)];
+            }
+
+            announcer.classList.add("show");
+            updateUI();
+
+            setTimeout(() => {
+                announcer.classList.remove("show");
+                if (scoreP >= 5 || scoreCpu >= 5) {
+                    isGameOver = true;
+                    goTitle.innerText = scoreP >= 5 ? "VITÓRIA!" : "DERROTA";
+                    gameoverEl.classList.remove("hidden");
+                } else {
+                    resetPositions(winner);
+                    isResetting = false;
+                }
+            }, 1400);
+        }
+
+        function draw() {
+            ctx.fillStyle = '#080d1a';
+            ctx.fillRect(0, 0, w, h);
+
+            // Borda
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(MARGIN, MARGIN, w - (MARGIN * 2), h - (MARGIN * 2));
+
+            // Linha Central
+            ctx.beginPath();
+            ctx.moveTo(w / 2, MARGIN);
+            ctx.lineTo(w / 2, h - MARGIN);
+            ctx.setLineDash([10, 10]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Círculo Central
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.stroke();
+
+            // Gols
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#00f0ff';
+            ctx.beginPath();
+            ctx.moveTo(MARGIN, goalTop);
+            ctx.lineTo(MARGIN, goalBottom);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ff0055';
+            ctx.beginPath();
+            ctx.moveTo(w - MARGIN, goalTop);
+            ctx.lineTo(w - MARGIN, goalBottom);
+            ctx.stroke();
+
+            drawPaddle(player.x, player.y, player.radius, '#00f0ff');
+            drawPaddle(cpu.x, cpu.y, cpu.radius, '#ff0055');
+            drawPuck(puck.x, puck.y, puck.radius);
+        }
+
+        function drawPaddle(x, y, r, color) {
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = '#050811';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawPuck(x, y, r) {
+            ctx.save();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        startGame();
+        loop();
+    </script>
+</body>
+</html>
