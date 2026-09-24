@@ -7,7 +7,7 @@ Vou continuar a praticar e a evoluir em breve para trazer projetos futuros ainda
 ---
 
 ## 🎮 Jogar no Navegador
-👉 **[Clica aqui para jogar online](https://github.com/truemelloo/air-hockey-game.git)**
+👉 **[Clica aqui para jogar online](https://air-hockey-game-2jq70u6ul-projetostruemelloo.vercel.app/)**
 
 ---
 
