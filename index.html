@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Air Hockey Game</title>
     <style>
         * {
@@ -10,6 +10,8 @@
             margin: 0;
             padding: 0;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
 
         body {
@@ -26,34 +28,42 @@
         .master {
             display: flex;
             align-items: center;
-            gap: 20px;
-        }
-
-        canvas {
-            display: block;
-            width: 800px;
-            height: 500px;
-            border-radius: 16px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.2);
-            cursor: none;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 10px;
         }
 
         #game-arena {
             position: relative;
-            width: 800px;
-            height: 500px;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 8 / 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.2);
         }
 
         .stat-panel {
-            width: 170px;
+            width: 150px;
             background: rgba(10, 16, 30, 0.85);
             border-radius: 12px;
-            padding: 20px 15px;
+            padding: 15px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
+            flex-shrink: 0;
         }
 
         .stat-left {
@@ -67,30 +77,30 @@
         }
 
         .stat-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             letter-spacing: 2px;
         }
 
         .stat-score {
-            font-size: 54px;
+            font-size: 42px;
             font-weight: 900;
-            margin: 10px 0;
+            margin: 5px 0;
         }
 
         .stat-divider {
             width: 100%;
             height: 1px;
             background: rgba(255, 255, 255, 0.1);
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         .stat-row {
             width: 100%;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 11px;
+            margin-bottom: 6px;
+            font-size: 10px;
         }
 
         .stat-label {
@@ -104,12 +114,11 @@
         }
 
         .stat-footer {
-            font-size: 10px;
+            font-size: 9px;
             color: #5d6b7c;
             letter-spacing: 1px;
         }
 
-        /* Animação da Mensagem de Ponto */
         .announcer {
             position: absolute;
             top: 50%;
@@ -124,20 +133,20 @@
 
         .announcer.show {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1.1);
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .announcer h1 {
-            font-size: 56px;
+            font-size: 42px;
             font-weight: 900;
             color: #00f0ff;
             text-shadow: 0 0 20px #00f0ff, 0 0 40px #0088ff;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             text-transform: uppercase;
         }
 
         .announcer p {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 800;
             color: #ffffff;
             letter-spacing: 2px;
@@ -171,7 +180,7 @@
         }
 
         .go-inner h1 {
-            font-size: 42px;
+            font-size: 36px;
             color: #00f0ff;
             text-shadow: 0 0 15px #00f0ff;
             margin-bottom: 5px;
@@ -179,8 +188,8 @@
 
         .go-inner p {
             color: #8a99ad;
-            margin-bottom: 25px;
-            font-size: 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
             letter-spacing: 1px;
         }
 
@@ -188,8 +197,8 @@
             background: transparent;
             border: 2px solid #00f0ff;
             color: #00f0ff;
-            padding: 12px 30px;
-            font-size: 16px;
+            padding: 10px 25px;
+            font-size: 14px;
             font-weight: 700;
             border-radius: 25px;
             cursor: pointer;
@@ -201,6 +210,35 @@
             background: #00f0ff;
             color: #050811;
             box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+        }
+
+        /* Adaptações para Telemóveis / Telas Pequenas */
+        @media (max-width: 768px) {
+            .master {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stat-panel {
+                width: 100%;
+                max-width: 800px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 8px 15px;
+            }
+
+            .stat-divider, .stat-row, .stat-footer {
+                display: none;
+            }
+
+            .stat-score {
+                font-size: 28px;
+                margin: 0;
+            }
+
+            .stat-name {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -220,7 +258,6 @@
         <div id="game-arena">
             <canvas id="c"></canvas>
 
-            <!-- Mensagem ao fazer Ponto -->
             <div id="announcer" class="announcer">
                 <h1 id="ann-main">PONTO!</h1>
                 <p id="ann-sub">BOM CHUTE!</p>
@@ -273,7 +310,6 @@
             cpuPower: document.getElementById("stat-cpu-power")
         };
 
-        // Mensagens ao marcar ponto
         const playerGoalSubMsgs = ["BOM CHUTE!", "GOLAÇO!", "EXCELENTE!", "BOLA NA REDE!"];
         const cpuGoalSubMsgs = ["PONTO DO CPU!", "AZAR!", "TENTA DE NOVO!", "DEFENDE MAIS!"];
 
@@ -318,11 +354,35 @@
 
         let stats = { pStreak: 0, pSpeed: 0, pPower: 0, cpuStreak: 0, cpuSpeed: 0, cpuPower: 0 };
 
-        cv.addEventListener("mousemove", (e) => {
+        function updatePointerPosition(clientX, clientY) {
             const rect = cv.getBoundingClientRect();
-            mouse.x = e.clientX - rect.left;
-            mouse.y = e.clientY - rect.top;
+            const scaleX = cv.width / rect.width;
+            const scaleY = cv.height / rect.height;
+
+            mouse.x = (clientX - rect.left) * scaleX;
+            mouse.y = (clientY - rect.top) * scaleY;
+        }
+
+        // Suporte para Rato
+        cv.addEventListener("mousemove", (e) => {
+            updatePointerPosition(e.clientX, e.clientY);
         });
+
+        // Suporte para Touch (Telemóvel)
+        cv.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                // Desvia ligeiramente a posição Y para o dedo não tapar a raquete
+                updatePointerPosition(e.touches[0].clientX, e.touches[0].clientY - 25);
+            }
+        }, { passive: false });
+
+        cv.addEventListener("touchstart", (e) => {
+            initAudio();
+            if (e.touches.length > 0) {
+                updatePointerPosition(e.touches[0].clientX, e.touches[0].clientY - 25);
+            }
+        }, { passive: true });
 
         window.addEventListener("click", initAudio, { once: true });
 
@@ -482,7 +542,6 @@
             }
         }
 
-        // Função ao marcar Ponto
         function handleGoal(winner) {
             isResetting = true;
             playSound(520, 'triangle', 0.3);
@@ -535,12 +594,10 @@
             ctx.fillStyle = '#080d1a';
             ctx.fillRect(0, 0, w, h);
 
-            // Borda
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
             ctx.lineWidth = 4;
             ctx.strokeRect(MARGIN, MARGIN, w - (MARGIN * 2), h - (MARGIN * 2));
 
-            // Linha Central
             ctx.beginPath();
             ctx.moveTo(w / 2, MARGIN);
             ctx.lineTo(w / 2, h - MARGIN);
@@ -549,13 +606,11 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Círculo Central
             ctx.beginPath();
             ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.stroke();
 
-            // Gols
             ctx.lineWidth = 6;
             ctx.strokeStyle = '#00f0ff';
             ctx.beginPath();
