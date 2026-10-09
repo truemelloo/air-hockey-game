@@ -7,7 +7,8 @@ Vou continuar a praticar e a evoluir em breve para trazer projetos futuros ainda
 ---
 
 ## 🎮 Jogar no Navegador
-👉 **[Clica aqui para jogar online]([https://air-hockey-game-2jq70u6ul-projetostruemelloo.vercel.app/](https://air-hockey-game-eight.vercel.app/))**
+
+👉 **[Clique aqui para jogar online!](https://air-hockey-game-eight.vercel.app/)**
 
 ---
 
